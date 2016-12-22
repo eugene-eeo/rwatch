@@ -1,0 +1,194 @@
+<!doctype html>
+<html>
+<head>
+  <title>RWatch</title>
+  <style>
+@import url('https://fonts.googleapis.com/css?family=Lora');
+body {
+  font-size: 16px;
+  font-family: 'Lora', Arial, sans-serif;
+}
+h1 {
+  font-variant: small-caps;
+  margin: 0.5em 0;
+  border-bottom: 1px solid #000;
+  padding-bottom: 0.2em;
+}
+#subreddit {
+  font-size: 1em;
+  font-variant: small-caps;
+  font-family: inherit;
+}
+.subreddits {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.subreddit .unsubscribe {
+  float: right;
+  padding: 0;
+  background: none;
+  border: 0;
+  font-size: 1em;
+  font-weight: bold;
+}
+.subreddit .unsubscribe:hover {
+  color: red;
+  cursor: pointer;
+}
+.subreddit h2 {
+  margin-top: 0;
+  font-variant: small-caps;
+  border-bottom: 1px solid #000;
+}
+.subreddit {
+  margin: 0.15em;
+  width: calc(25% - 2.3em);
+  max-width: 20em;
+  min-width: 17em;
+  float: left;
+  flex: 1 1 auto;
+  outline: 1px solid #CCC;
+  padding: 1em;
+  overflow: scroll;
+}
+.post {
+  background-color: #EAEAEA;
+  outline: 1px solid #CCC;
+  padding: 0.5em;
+  margin: 0.3em 0;
+  width: calc(100% - 1em);
+}
+.post a {
+  text-decoration: none;
+  color: black;
+}
+.post h3 {
+  margin: 0;
+  font-weight: normal;
+}
+.post .time {
+  color: #AAA;
+}
+#message {
+  font-size: 1.2em;
+  padding: 0.2em 1em;
+  display: none;
+}
+.red     { background-color: #F08080; display: block !important; }
+.green   { background-color: #90EE90; display: block !important; }
+.yellow  { background-color: #FAFAD2; display: block !important; }
+  </style>
+</head>
+<body>
+  <div id='message'></div>
+  <h1>Subscribe to /r/<input id='subreddit' type='text'></input></h1>
+  <div id='subreddits'></div>
+
+  <script src='ext/korah.js'></script>
+  <script src='ext/evee.js'></script>
+  <script src='ext/nut.js'></script>
+  <script src='ext/store.min.js'></script>
+  <script src='ext/vagueTime.js'></script>
+  <script src='ext/pusher.min.js'></script>
+  <script>
+var $ = nut;
+var pusher = new Pusher("50ed18dd967b455393ed");
+var message = $.el('#message');
+var input = $.el('#subreddit');
+var subs = $.el('#subreddits');
+var subscriptions = store.get('subs') || [];
+
+function makeListing(listing) {
+  return kr.div({class: 'post', 'data-id': listing.id}, [
+    kr.a({target: '_blank', href: 'https://www.reddit.com' + listing.permalink}, kr.h3(listing.title)),
+    kr.span({class: 'time', 'data-time': listing.created_utc}, vagueTime.get({
+      to: listing.created_utc,
+      units: 's',
+    })),
+  ]);
+}
+
+function makeSubreddit(sub) {
+  var unsubscribe = kr.button({class: 'unsubscribe'}, 'X');
+  var div = kr.div({class: 'subreddit'}, kr.div([unsubscribe, kr.h2(sub)]));
+  var channel = pusher.subscribe(sub);
+  evee.on(unsubscribe, 'click', function(ev) {
+    try {
+      pusher.unsubscribe(sub);
+    } catch (err) {} // pusher throws error if channel name is invalid
+    div.parentNode.removeChild(div);
+    subscriptions.splice(subscriptions.indexOf(sub), 1);
+    store.set('subs', subscriptions);
+  });
+  channel.bind('new-listing', function(listing) {
+    var node = makeListing(listing);
+    if (div.children.length === 1)
+      div.appendChild(node)
+    else
+      div.insertBefore(node, div.children[1]);
+  });
+  return div;
+}
+
+function subscribe(sub) {
+  subs.appendChild(makeSubreddit(sub));
+}
+
+function addText(text) {
+  return function() {
+    message.appendChild(kr.p(text));
+  };
+}
+
+message_map = {
+  'initialized': { color: 'yellow', cb: addText('Setting up the connection...') },
+  'connecting':  { color: 'yellow', cb: addText('Trying to connect, hold on...') },
+  'connected':   { color: 'green', cb: function() {
+    message.appendChild(kr.p('We\'re good to go!'));
+    setTimeout(function() {
+      message.innerHTML = '';
+      message.classList.remove('green');
+    }, 2500);
+  } },
+  'unavailable':  { color: 'red', cb: addText('You may need to check your internet connection.') },
+  'failed':       { color: 'red', cb: addText('Pusher is not supported on this browser.') },
+  'disconnected': { color: 'red', cb: addText('Yikes. We\'re sorry about this; Please reload the page.') },
+};
+
+setInterval(function() {
+  $('.post').forEach(function(el)  {
+    var span = $.el('.time', el);
+    span.textContent = vagueTime.get({
+      to: +span.getAttribute('data-time'),
+      units: 's',
+    });
+  });
+}, 10*1000);
+
+subscriptions.forEach(subscribe);
+
+pusher.connection.bind('state_change', function(states) {
+  message.innerHTML = '';
+  var info = message_map[states.current];
+  message.classList.add(info.color);
+  info.cb();
+});
+
+evee.delegate(document.body, 'click', '.post', function(el, post) {
+  post.parentNode.removeChild(post);
+});
+
+evee.on(input, 'keydown', function(ev) {
+  if (ev.which == 10 || ev.which == 13) { // Enter/Return
+    var sub = input.value.toLowerCase();
+    if (subscriptions.indexOf(sub) === -1) {
+      subscriptions.push(sub);
+      store.set('subs', subscriptions);
+      subscribe(sub);
+    }
+  }
+});
+  </script>
+</body>
+</html>
