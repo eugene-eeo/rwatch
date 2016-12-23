@@ -1,0 +1,75 @@
+@import url('https://fonts.googleapis.com/css?family=Lora');
+body {
+  font-size: 16px;
+  font-family: 'Lora', Arial, sans-serif;
+}
+h1 {
+  font-variant: small-caps;
+  margin: 0.5em 0;
+  border-bottom: 1px solid #000;
+  padding-bottom: 0.2em;
+}
+#subreddit {
+  font-size: 1em;
+  font-variant: small-caps;
+  font-family: inherit;
+}
+.subreddits {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.subreddit .unsubscribe {
+  float: right;
+  padding: 0;
+  background: none;
+  border: 0;
+  font-size: 1em;
+  font-weight: bold;
+}
+.subreddit .unsubscribe:hover {
+  color: red;
+  cursor: pointer;
+}
+.subreddit h2 {
+  margin-top: 0;
+  font-variant: small-caps;
+  border-bottom: 1px solid #000;
+}
+.subreddit {
+  margin: 0.15em;
+  width: calc(25% - 2.3em);
+  max-width: 20em;
+  min-width: 17em;
+  float: left;
+  flex: 1 1 auto;
+  outline: 1px solid #CCC;
+  padding: 1em;
+  overflow: scroll;
+}
+.post {
+  background-color: #EAEAEA;
+  outline: 1px solid #CCC;
+  padding: 0.5em;
+  margin: 0.3em 0;
+  width: calc(100% - 1em);
+}
+.post a {
+  text-decoration: none;
+  color: black;
+}
+.post h3 {
+  margin: 0;
+  font-weight: normal;
+}
+.post .time {
+  color: #AAA;
+}
+#message {
+  font-size: 1.2em;
+  padding: 0.2em 1em;
+  display: none;
+}
+.red     { background-color: #F08080; display: block !important; }
+.green   { background-color: #90EE90; display: block !important; }
+.yellow  { background-color: #FAFAD2; display: block !important; }
