@@ -42,6 +42,22 @@ function subscribe(sub) {
   subs.appendChild(makeSubreddit(sub));
 }
 
+function swapIfNeq(obj, prop, val) {
+    if (obj[prop] !== val) {
+        obj[prop] = val;
+    }
+}
+
+setInterval(function() {
+  $('.post').forEach(function(el)  {
+    var span = $.el('.time', el);
+    swapIfNeq(span, 'textContent', vagueTime.get({
+      to: +span.getAttribute('data-time'),
+      units: 's',
+    }));
+  });
+}, 10*1000);
+
 var message_map = {
   'initialized':  { color: 'yellow', text: 'Setting up the connection...' },
   'connecting':   { color: 'yellow', text: 'Trying to connect, hold on...' },
@@ -50,16 +66,6 @@ var message_map = {
   'failed':       { color: 'red', text: 'Pusher is not supported on this browser.' },
   'disconnected': { color: 'red', text: "Yikes. Try reloading the page." },
 };
-
-setInterval(function() {
-  $('.post').forEach(function(el)  {
-    var span = $.el('.time', el);
-    span.textContent = vagueTime.get({
-      to: +span.getAttribute('data-time'),
-      units: 's',
-    });
-  });
-}, 10*1000);
 
 pusher.connection.bind('state_change', function(states) {
   message.innerHTML = '';
