@@ -70,9 +70,11 @@ pusher.connection.bind('state_change', function(states) {
     var info = message_map[states.current];
     message.classList.add(info.color);
     message.appendChild(kr.p(info.text));
+    message.classList.toggle('hidden');
     setTimeout(function() {
         message.innerHTML = '';
         message.classList.remove(info.color);
+        message.classList.toggle('hidden');
     }, 2500);
 });
 
