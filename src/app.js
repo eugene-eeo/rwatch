@@ -1,9 +1,22 @@
 var $ = nut;
 var pusher = new Pusher('50ed18dd967b455393ed');
-var message = $.el('#message');
-var input = $.el('#subreddit');
-var subs = $.el('#subreddits');
-var subscriptions = store.get('subs') || [];
+var banner = $.el('#message');
+var input = $.el('#input');
+var feed = $.el('#feed');
+
+function PersistentList(key) {
+    var value = store.get(key) || [];
+    return {
+        get: function() { return value; },
+        mut: function(f) {
+            var a = value.concat([]);
+            value = f(a) || a;
+            store.set(key, value);
+        },
+    };
+}
+
+var subs = PersistentList('subs');
 
 function makeListing(listing) {
     return kr.div({class: 'post'}, [
@@ -16,28 +29,30 @@ function makeListing(listing) {
 }
 
 function makeSubreddit(sub) {
-    var unsubscribe = kr.button({class: 'unsubscribe'}, 'X');
+    var unsubscribe = kr.button({class: 'unsubscribe'}, '×');
     var posts = kr.div({class: 'posts'});
-    var div = kr.div({class: 'subreddit'}, [
-        kr.div({class: 'header'}, [unsubscribe, kr.h2(sub)]),
-        posts,
-    ]);
     var channel = pusher.subscribe(sub);
     evee.on(unsubscribe, 'click', function(ev) {
-        pusher.unsubscribe(sub);
         div.parentNode.removeChild(div);
-        subscriptions.splice(subscriptions.indexOf(sub), 1);
-        store.set('subs', subscriptions);
+        pusher.unsubscribe(sub);
+        subs.mut(function(v) {
+            v.splice(v.indexOf(sub), 1);
+        });
     });
     channel.bind('new-listing', function(listing) {
-        var node = makeListing(listing);
-        posts.insertBefore(node, posts.firstChild);
+        posts.insertBefore(makeListing(listing), posts.firstChild);
     });
-    return div;
+    return kr.div({class: 'subreddit'}, [
+        kr.div({class: 'header'}, [
+            unsubscribe,
+            kr.h2(sub),
+        ]),
+        posts,
+    ]);;
 }
 
 function subscribe(sub) {
-  subs.appendChild(makeSubreddit(sub));
+  feed.appendChild(makeSubreddit(sub));
 }
 
 function swapIfNeq(obj, prop, val) {
@@ -47,8 +62,7 @@ function swapIfNeq(obj, prop, val) {
 }
 
 setInterval(function() {
-    $('.post').forEach(function(el)  {
-        var span = $.el('.time', el);
+    $('.time').forEach(function(span) {
         swapIfNeq(span, 'textContent', vagueTime.get({
             to: +span.getAttribute('data-time'),
             units: 's',
@@ -66,31 +80,33 @@ var message_map = {
 };
 
 pusher.connection.bind('state_change', function(states) {
-    message.innerHTML = '';
     var info = message_map[states.current];
-    message.classList.add(info.color);
-    message.appendChild(kr.p(info.text));
-    message.classList.toggle('hidden');
+    banner.innerHTML = '';
+    banner.classList.add(info.color);
+    banner.appendChild(kr.p(info.text));
+    banner.classList.toggle('hidden');
     setTimeout(function() {
-        message.innerHTML = '';
-        message.classList.remove(info.color);
-        message.classList.toggle('hidden');
+        banner.innerHTML = '';
+        banner.classList.remove(info.color);
+        banner.classList.toggle('hidden');
     }, 2500);
 });
 
-evee.delegate(document.body, 'click', '.post', function(el, post) {
+evee.delegate(feed, 'click', '.post', function(el, post) {
     post.parentNode.removeChild(post);
 });
 
 evee.on(input, 'keydown', function(ev) {
-    if (ev.which == 10 || ev.which == 13) { // Enter/Return
-        var sub = input.value.toLowerCase();
-        if (subscriptions.indexOf(sub) === -1) {
-            subscriptions.push(sub);
-            store.set('subs', subscriptions);
-            subscribe(sub);
-        }
+    // Not Enter/Return
+    if (!(ev.which === 10 || ev.which === 13)) {
+        return;
+    }
+    var sub = input.value.toLowerCase();
+    if (subs.get().indexOf(sub) === -1) {
+        subs.mut(function(v) { v.push(sub); });
+        subscribe(sub);
     }
 });
 
-subscriptions.forEach(subscribe);
+subs.get().forEach(subscribe);
+dragula([feed], {direction: 'horizontal'});

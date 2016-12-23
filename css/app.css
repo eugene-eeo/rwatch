@@ -3,12 +3,15 @@ body {
   font-size: 16px;
   font-family: 'Roboto', Arial, sans-serif;
 }
+
 h1 {
+  font-size: 1.3em;
   font-variant: small-caps;
   margin: 0.5em 0;
   padding-bottom: 0.2em;
 }
-#subreddit {
+
+#input {
   font-size: 1em;
   font-variant: small-caps;
   font-family: inherit;
@@ -16,22 +19,30 @@ h1 {
   max-width: calc(100% - 0.4em);
   margin: 0;
 }
-.subreddits {
+
+#feed {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: flex-start;
+  overflow-y: scroll;
+  overflow-x: scroll;
 }
+
 .subreddit {
   margin: 0.15em;
   width: calc(25% - 2.3em);
   max-width: 20em;
   min-width: 17em;
+  flex: 0 1 auto;
   float: left;
-  flex: 1 1 auto;
   outline: 1px solid #CCC;
   padding: 0.5em 1em 1em 1em;
-  overflow: scroll;
 }
+
+.subreddit .header:hover {
+  cursor: grab;
+}
+
 .subreddit .unsubscribe {
   float: right;
   padding: 0;
@@ -40,15 +51,19 @@ h1 {
   font-size: 1em;
   font-weight: bold;
 }
+
 .subreddit .unsubscribe:hover {
-  color:  #DC143C;
+  color: #DC143C;
   cursor: pointer;
 }
+
 .subreddit h2 {
   margin-top: 0;
   font-variant: small-caps;
   border-bottom: 1px solid #CCC;
 }
+
+/* Posts */
 .post {
   background-color: #EAEAEA;
   outline: 1px solid #CCC;
@@ -56,17 +71,22 @@ h1 {
   margin: 0.3em 0;
   width: calc(100% - 1em);
 }
+
 .post a {
   text-decoration: none;
   color: black;
 }
+
 .post h3 {
   margin: 0;
   font-weight: normal;
 }
+
 .post .time {
   color: #AAA;
 }
+
+/* Messages */
 #message {
   font-size: 1.2em;
   padding: 0.2em 1em;
@@ -75,23 +95,11 @@ h1 {
   max-width: 30em;
   margin: 0 auto;
 }
+
 .hidden  { display: none; }
 .red     { background-color: #F08080; outline: 1px solid #DC143C; }
 .green   { background-color: #90EE90; outline: 1px solid #556B2F; }
 .yellow  { background-color: #FAFAD2; outline: 1px solid #B8860B; }
 
-/* Mobile devices */
-@media only screen and (max-width: 500px) {
-  body { width: calc(100% - 1em);
-         margin: 1em auto; }
-  #message   { max-width: calc(100%; - 2em); }
-  .subreddit { width: calc(100% - 2.3em); }
-}
-
-/* Tablets */
-@media only screen and (min-width: 500px) and (max-width: 980px) {
-  .subreddit {
-    width: calc(50% - 2.3em);
-    max-width: none;
-  }
-}
+/* Drag and drop */
+.gu-mirror { display: none; }
