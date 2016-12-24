@@ -32,8 +32,15 @@ function makeSubreddit(sub) {
     var unsubscribe = kr.button({class: 'unsubscribe'}, '×');
     var posts = kr.div({class: 'posts'});
     var channel = pusher.subscribe(sub);
+    var div = kr.div({class: 'subreddit', 'data-sub': sub}, [
+        kr.div({class: 'header'}, [
+            unsubscribe,
+            kr.h2(sub),
+        ]),
+        posts,
+    ]);
     evee.on(unsubscribe, 'click', function(ev) {
-        div.parentNode.removeChild(div);
+        feed.removeChild(div);
         pusher.unsubscribe(sub);
         subs.mut(function(v) {
             v.splice(v.indexOf(sub), 1);
@@ -42,13 +49,7 @@ function makeSubreddit(sub) {
     channel.bind('new-listing', function(listing) {
         posts.insertBefore(makeListing(listing), posts.firstChild);
     });
-    return kr.div({class: 'subreddit'}, [
-        kr.div({class: 'header'}, [
-            unsubscribe,
-            kr.h2(sub),
-        ]),
-        posts,
-    ]);;
+    return div;
 }
 
 function subscribe(sub) {
@@ -86,7 +87,6 @@ pusher.connection.bind('state_change', function(states) {
     banner.appendChild(kr.p(info.text));
     banner.classList.toggle('hidden');
     setTimeout(function() {
-        banner.innerHTML = '';
         banner.classList.remove(info.color);
         banner.classList.toggle('hidden');
     }, 2500);
@@ -98,9 +98,7 @@ evee.delegate(feed, 'click', '.post', function(el, post) {
 
 evee.on(input, 'keydown', function(ev) {
     // Not Enter/Return
-    if (!(ev.which === 10 || ev.which === 13)) {
-        return;
-    }
+    if (!(ev.which === 10 || ev.which === 13)) return;
     var sub = input.value.toLowerCase();
     if (subs.get().indexOf(sub) === -1) {
         subs.mut(function(v) { v.push(sub); });
@@ -109,4 +107,13 @@ evee.on(input, 'keydown', function(ev) {
 });
 
 subs.get().forEach(subscribe);
-dragula([feed], {direction: 'horizontal'});
+var drake = dragula([feed], {direction: 'horizontal'});
+drake.on('drop', function(el, target, source, sibling) {
+    subs.mut(function(a) {
+        return $('.subreddit')
+            .filter(function(el) { return !el.classList.contains('gu-mirror'); })
+            .map(function(el) {
+                return el.getAttribute('data-sub');
+            });
+    });
+});
