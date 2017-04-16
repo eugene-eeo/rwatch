@@ -11,7 +11,10 @@ function PersistentList(key) {
         mut: function(f) {
             var a = value.concat([]);
             value = f(a) || a;
-            store.set(key, value);
+            try {
+                store.set(key, value);
+            } catch (err) {
+            }
         },
     };
 }
@@ -50,10 +53,6 @@ function makeSubreddit(sub) {
         posts.insertBefore(makeListing(listing), posts.firstChild);
     });
     return div;
-}
-
-function subscribe(sub) {
-  feed.appendChild(makeSubreddit(sub));
 }
 
 function swapIfNeq(obj, prop, val) {
@@ -95,6 +94,10 @@ pusher.connection.bind('state_change', function(states) {
 evee.delegate(feed, 'click', '.post', function(el, post) {
     post.parentNode.removeChild(post);
 });
+
+function subscribe(sub) {
+    feed.appendChild(makeSubreddit(sub));
+}
 
 evee.on(input, 'keydown', function(ev) {
     // Not Enter/Return
