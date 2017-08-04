@@ -3,6 +3,8 @@ var pusher = new Pusher('50ed18dd967b455393ed');
 var banner = $.el('#message');
 var input = $.el('#input');
 var feed = $.el('#feed');
+var focusgone = false;
+var unread = 0;
 
 function PersistentList(key) {
     var value = store.get(key) || [];
@@ -51,22 +53,23 @@ function makeSubreddit(sub) {
     });
     channel.bind('new-listing', function(listing) {
         posts.insertBefore(makeListing(listing), posts.firstChild);
+        if (focusgone) {
+            unread += 1;
+            document.title = "RWatch (" + unread + ")";
+        }
     });
     return div;
 }
 
-function swapIfNeq(obj, prop, val) {
-    if (obj[prop] !== val) {
-        obj[prop] = val;
-    }
-}
-
 setInterval(function() {
     $('.time').forEach(function(span) {
-        swapIfNeq(span, 'textContent', vagueTime.get({
+        var val = vagueTime.get({
             to: +span.getAttribute('data-time'),
             units: 's',
-        }));
+        });
+        if (span.textContent !== val) {
+            span.textContent = val;
+        }
     });
 }, 10*1000);
 
@@ -120,3 +123,12 @@ drake.on('drop', function(el, target, source, sibling) {
             });
     });
 });
+
+tabswitch({
+    gone: function() { focusgone = true; },
+    back: function() {
+        focusgone = false;
+        unread = 0;
+        document.title = "RWatch";
+    }
+})
